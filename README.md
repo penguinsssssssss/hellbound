@@ -41,5 +41,22 @@ In WSL (needs `systemd=true` in `/etc/wsl.conf`), it runs only while WSL is up, 
 Windows shuts WSL down a little while after the last WSL window closes. Keep a WSL
 terminal open, or have Windows start one hidden at logon.
 
+## More than one bot
+
+The bot's name and picture live in its Slack app, not in this code, so one checkout
+can run several differently named bots. For each one:
+
+1. Create another Slack app from `manifest.yml`, changing `name` and `display_name`
+   in the manifest editor before you click Create. Install it and copy its token.
+2. Put its token and channel in `.env.NAME` (e.g. `.env.second`), with `NAME` in
+   lowercase letters, digits, and `-`. Every `.env.*` except the example is gitignored.
+3. `sh deploy/install.sh --instance NAME --every 0.3333 --jitter 0`. This installs a
+   separate `hellbound-NAME` service, so `journalctl -u hellbound-NAME -f` and
+   `sudo systemctl disable --now hellbound-NAME` work on that bot alone.
+
+After editing `MESSAGES`, restart every bot: `sudo systemctl restart 'hellbound*'`.
+
+## Errors
+
 Network failures are logged and retried at the next scream. A bad token, missing
 scope, or unknown channel stops the script with the reason.

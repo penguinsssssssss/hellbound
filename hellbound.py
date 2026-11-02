@@ -8,6 +8,7 @@ Standard library only. Run:
     python3 hellbound.py --every 30 --jitter 10
     python3 hellbound.py --once               # scream once, then exit
     python3 hellbound.py --dry-run --every 0.05 --jitter 0   # print, don't post
+    python3 hellbound.py --env-file .env.other  # a second bot with its own token
 """
 
 import argparse
@@ -127,10 +128,12 @@ def main():
     parser.add_argument("--once", action="store_true", help="scream once and exit")
     parser.add_argument("--dry-run", action="store_true",
                         help="print screams instead of posting; needs no token")
+    parser.add_argument("--env-file", type=Path, default=Path(__file__).with_name(".env"),
+                        help="token and channel for this bot (default: .env next to this script)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-    load_dotenv()
+    load_dotenv(args.env_file)
     token = os.environ.get("SLACK_BOT_TOKEN")
     channel = args.channel or os.environ.get("SLACK_CHANNEL")
     if not args.dry_run and not (token and channel):
