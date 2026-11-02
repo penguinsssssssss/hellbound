@@ -1,0 +1,16 @@
+# Always-on Hellbound. Install with deploy/install.sh, which fills
+# in your user, the checkout path, and any hellbound.py arguments.
+[Unit]
+Description=Hellbound, going to hell on a timer
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=pi
+WorkingDirectory=/home/pi/Hellbound
+ExecStart=/usr/bin/python3 hellbound.py
+Restart=on-failure
+RestartSec=300
+
+[Install]
+WantedBy=multi-user.target
