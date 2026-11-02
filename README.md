@@ -11,8 +11,10 @@ python3 hellbound.py --once                   # one scream, then exit
 python3 hellbound.py --dry-run --every 0.05 --jitter 0   # print to the terminal, no Slack
 ```
 
-Add or edit lines in `MESSAGES` at the top of `hellbound.py`. `{time}` and `{day}`
-are filled in when a message is sent.
+The built-in messages are `MESSAGES` at the top of `hellbound.py`. To give a bot its
+own, write them one per line in a text file (see `messages.example.txt`) and set
+`MESSAGES_FILE=thatfile.txt` in the bot's env file, or pass `--messages thatfile.txt`.
+`{time}` and `{day}` are filled in when a message is sent.
 
 ## Setup (once)
 
@@ -50,11 +52,13 @@ can run several differently named bots. For each one:
    in the manifest editor before you click Create. Install it and copy its token.
 2. Put its token and channel in `.env.NAME` (e.g. `.env.second`), with `NAME` in
    lowercase letters, digits, and `-`. Every `.env.*` except the example is gitignored.
-3. `sh deploy/install.sh --instance NAME --every 0.3333 --jitter 0`. This installs a
+3. Optional: its own messages in `messages.NAME.txt` (also gitignored), with
+   `MESSAGES_FILE=messages.NAME.txt` in `.env.NAME`. Without one it uses the built-ins.
+4. `sh deploy/install.sh --instance NAME --every 0.3333 --jitter 0`. This installs a
    separate `hellbound-NAME` service, so `journalctl -u hellbound-NAME -f` and
    `sudo systemctl disable --now hellbound-NAME` work on that bot alone.
 
-After editing `MESSAGES`, restart every bot: `sudo systemctl restart 'hellbound*'`.
+After editing any messages, restart the bots to pick them up: `sudo systemctl restart 'hellbound*'`.
 
 ## Errors
 

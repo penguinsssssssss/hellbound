@@ -9,6 +9,7 @@ Standard library only. Run:
     python3 hellbound.py --once               # scream once, then exit
     python3 hellbound.py --dry-run --every 0.05 --jitter 0   # print, don't post
     python3 hellbound.py --env-file .env.other  # a second bot with its own token
+    python3 hellbound.py --messages messages.other.txt   # its own messages too
 """
 
 import argparse
@@ -30,7 +31,7 @@ POST_URL = "https://slack.com/api/chat.postMessage"
 FATAL_ERRORS = {"invalid_auth", "not_authed", "account_inactive", "token_revoked",
                 "channel_not_found", "not_in_channel", "is_archived", "missing_scope"}
 
-# {time} and {day} are filled in when the message is sent.
+# Used when no messages file is given. {time} and {day} are filled in when sent.
 MESSAGES = [
     "I'M GOING TO HELL!!!!!!",
     "AAAAAAAAAAAAAAAAAAAAAAAAAAA HELL AAAAAAAAAAAAAAAAAAAAAAAAAA :fire:",
@@ -73,18 +74,34 @@ def load_dotenv(path=Path(__file__).with_name(".env")):
             os.environ.setdefault(key.strip(), value.strip().strip("'\""))
 
 
-def screams():
+def load_messages(path):
+    """One message per line; blank lines and lines starting with # are skipped.
+    A relative path is relative to this script's folder."""
+    path = Path(__file__).parent / path
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as e:
+        raise SystemExit(f"can't read messages file: {e}")
+    messages = [line.strip() for line in lines
+                if line.strip() and not line.strip().startswith("#")]
+    if not messages:
+        raise SystemExit(f"no messages in {path}")
+    return messages
+
+
+def screams(messages):
     """Yield messages forever, each one once per shuffled pass, never twice in a row."""
     last = None
     while True:
-        bag = random.sample(MESSAGES, len(MESSAGES))
+        bag = random.sample(messages, len(messages))
         if bag[0] == last:
             bag.append(bag.pop(0))
         for template in bag:
             now = datetime.now()
             hour = now.hour % 12 or 12
-            yield template.format(time=f"{hour}:{now:%M} {now:%p}",
-                                  day=now.strftime("%A").upper())
+            # replace() rather than format(), so a stray { in a message file is harmless
+            yield (template.replace("{time}", f"{hour}:{now:%M} {now:%p}")
+                           .replace("{day}", now.strftime("%A").upper()))
         last = bag[-1]
 
 
@@ -130,6 +147,9 @@ def main():
                         help="print screams instead of posting; needs no token")
     parser.add_argument("--env-file", type=Path, default=Path(__file__).with_name(".env"),
                         help="token and channel for this bot (default: .env next to this script)")
+    parser.add_argument("--messages", metavar="FILE",
+                        help="this bot's messages, one per line "
+                             "(default: $MESSAGES_FILE, else the built-in list)")
     args = parser.parse_args()
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
@@ -138,8 +158,11 @@ def main():
     channel = args.channel or os.environ.get("SLACK_CHANNEL")
     if not args.dry_run and not (token and channel):
         raise SystemExit("set SLACK_BOT_TOKEN and SLACK_CHANNEL (in the environment or .env)")
+    messages_file = args.messages or os.environ.get("MESSAGES_FILE")
+    messages = load_messages(messages_file) if messages_file else MESSAGES
+    log.info("%d messages from %s", len(messages), messages_file or "the built-in list")
 
-    for text in screams():
+    for text in screams(messages):
         if args.dry_run:
             log.info("would post: %s", text)
         else:

@@ -1,4 +1,6 @@
 .env
 .env.*
 !.env.example
+messages.*.txt
+!messages.example.txt
 __pycache__/

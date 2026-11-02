@@ -1,0 +1,6 @@
+# One message per line. Blank lines and lines starting with # are skipped.
+# {time} and {day} are filled in when a message is sent. Slack emoji like :fire: work.
+# Copy to messages.NAME.txt (gitignored) and point MESSAGES_FILE at it in .env.NAME.
+I'M GOING TO HELL!!!!!!
+IT'S {time} AND I'M STILL GOING TO HELL
+HAPPY {day}. I'M GOING TO HELL. :fire:
